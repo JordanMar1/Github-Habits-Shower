@@ -19,7 +19,7 @@
 
     const LABELS = {
       pr: { title: "Pull requests", img: "assets/orange.jpg", color: { r: 255, g: 127, b: 0 } },
-      review: { title: "Reviews de PR", img: "assets/blueberries.png", color: { r: 0, g: 0, b: 255 } },
+      review: { title: "Reviews de PR", img: "assets/blueberry.jpg", color: { r: 0, g: 0, b: 255 } },
       issue: { title: "Issues", img: "assets/apple.jpg", color: { r: 255, g: 0, b: 0 } },
       //discussion: { title: "Discussions", img:"assets/banana.jpg", color: { r: 255, g: 255, b:0 }}
     };
@@ -29,27 +29,31 @@
     const render = stats =>
       Object.entries(LABELS).map(([t, { title, img: imgSrc, color }]) => {
         const item = stats[t]?.[0] || { current: 0, longest: 0 };
-        const intensity = Math.min(item.current / 365, 1);
+        const intensity = Math.min(item.current / 30, 1);
+        const grayscale = 100 - (intensity * 100);
         const rgbString = `${color.r}, ${color.g}, ${color.b}`;
-
         return `
-          <div class="stat-card" style="text-align: center; margin-bottom: 1rem;">
-            <!-- Conteneur pour l'image teintée -->
-            <div style="
-              width: 50px;
-              height: 50px;
-              margin: 0 auto 0.5rem;
-              mask-image: url('${imgSrc}');
-              -webkit-mask-image: url('${imgSrc}');
-              mask-size: contain;
-              -webkit-mask-size: contain;
-              mask-repeat: no-repeat;
-              -webkit-mask-repeat: no-repeat;
-              background-color: rgb(${rgbString});
-              opacity: ${0.3 + (intensity * 0.7)}; /* L'opacité ou l'intensité varie selon l'activité (min 0.3) */
-            "></div>
+          <div class="stat-card" style="
+            text-align: center;
+            margin-bottom: 1rem;
+          ">
+          <div style="
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 0.5rem;
+
+            background-image: url('${imgSrc}');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+
+            filter: grayscale(${grayscale}%);
+            transition: filter 0.4s ease;
+          "></div>
             <div>
-              <strong>${title}</strong> : série en cours ${item.current} j, plus longue ${item.longest} j
+              <strong>${title}</strong> :
+              série en cours ${item.current} j,
+              plus longue ${item.longest} j
             </div>
           </div>
         `;

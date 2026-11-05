@@ -1,5 +1,5 @@
-apple (Issues): https://fr.pinterest.com/pin/649996158714167100/
-pear (Commits): https://fr.pinterest.com/pin/756815912397810372/
-orange (PR): https://fr.pinterest.com/pin/751890100285029902/
-blueberries (PR Review): https://www.supercoloring.com/fr/media/coloring/1491443/myrtilles-bleuets
-banana (discussions): https://fr.pinterest.com/pin/296041375508749338/
+apple (Issues): https://www.istockphoto.com/fr/photo/pomme-rouge-disolement-sur-le-fond-blanc-chemin-de-d%C3%A9coupage-pleine-profondeur-de-gm1439436349-479705636
+pear (Commits): https://www.istockphoto.com/fr/photo/poire-simple-gm164142758-23387024
+orange (PR): https://fr.wikipedia.org/wiki/Orange_%28fruit%29
+blueberries (PR Review): https://en.wikipedia.org/wiki/Blueberry
+banana (discussions): https://fr.wikipedia.org/wiki/Fichier:Banana-Single.jpg
