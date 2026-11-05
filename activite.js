@@ -2,7 +2,7 @@ const TYPES = {
   pr: "pullRequestContributions",
   review: "pullRequestReviewContributions",
   issue: "issueContributions",
-  discussion: "repositoryDiscussionContributions",
+  //discussion: "repositoryDiscussionContributions",
   commit: "commitContributionsByRepository"
 };
 
@@ -16,13 +16,28 @@ export async function fetchDates(login, token, type, from, to) {
     query($login: String!, $from: DateTime!, $to: DateTime!, $after: String) {
       user(login: $login) {
         contributionsCollection(from: $from, to: $to) {
-          ${field}(first: 100, after: $after) {
-            nodes { occurredAt }
-            pageInfo { hasNextPage endCursor }
+          ${type === "commit"
+            ? `${field}(maxRepositories: 100) {
+                nodes {
+                  repository {
+                    name
+                  }
+                  contributions(first: 100) {
+                    nodes {
+                      occurredAt
+                    }
+                  }
+                }
+              }`
+            : `${field}(first: 100, after: $after) {
+                nodes { occurredAt }
+                pageInfo { hasNextPage endCursor }
+              }`
           }
         }
       }
-    }`;
+    }
+  `;
 
   const dates = [];
   let after = null;
