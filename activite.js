@@ -35,7 +35,7 @@ export async function fetchDates(login, token, type, from, to) {
     if (!json.data.user) throw new Error("Utilisateur introuvable");
 
     const page = json.data.user.contributionsCollection[field];
-    dates.push(...page.nodes.map(n => n.occurredAt));
+    dates.push(...page.nodes.filter().map(n => n.occurredAt));
     if (!page.pageInfo.hasNextPage) break;
     after = page.pageInfo.endCursor;
   }
