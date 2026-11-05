@@ -76,7 +76,7 @@
         $("status").textContent = `Connecté : ${pseudo}. Chargement...`;
         try {
           const stats = await compute(pseudo, token);
-          $("result").innerHTML() = render(stats);
+          $("result").innerHTML = render(stats);
           $("status").textContent = `Connecté : ${pseudo}. Données à jour.`;
           await save(session.user.id, stats);
         } catch (e) {
@@ -85,7 +85,7 @@
       } else if (!token && !lastToken) {
         const saved = await loadSaved(session.user.id);
         if (saved) {
-          $("result").innerHTML() = render(saved.stats);
+          $("result").innerHTML = render(saved.stats);
           $("status").textContent = `Connecté : ${pseudo}. Dernière mise à jour : ${new Date(saved.updated_at).toLocaleString("fr-FR")}. Clique sur « Actualiser » pour recalculer.`;
         } else {
           $("status").textContent = `Connecté : ${pseudo}. Clique sur « Actualiser » pour charger tes données.`;
