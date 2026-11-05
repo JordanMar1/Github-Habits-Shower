@@ -2,12 +2,16 @@ const TYPES = {
   pr: "pullRequestContributions",
   review: "pullRequestReviewContributions",
   issue: "issueContributions",
-  commit: "commitContributions",
   discussion: "repositoryDiscussionContributions",
+  commit: "commitContributionsByRepository"
 };
 
 export async function fetchDates(login, token, type, from, to) {
   const field = TYPES[type];
+  if (!field) {
+    console.warn(`Type d'activité inconnu : ${type}`);
+    return [];
+  }
   const query = `
     query($login: String!, $from: DateTime!, $to: DateTime!, $after: String) {
       user(login: $login) {
