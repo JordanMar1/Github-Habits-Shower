@@ -3,9 +3,7 @@ const TYPES = {
   review: "pullRequestReviewContributions",
   issue: "issueContributions",
 };
-
 const GITHUB_GRAPHQL_URL = "https://api.github.com/graphql";
-
 export async function fetchDates(login, token, type, from, to) {
   if (type === "discussion") {
     console.warn(
