@@ -18,17 +18,22 @@
     import { computeStreaks } from "./compute_streak.js";
 
     const LABELS = {
-      pr: "Pull requests",
-      review: "Reviews de PR",
-      issue: "Issues",
+      pr: ["Pull requests", "assets/orange.jpg", { r: 255, g: 127, b: 0 }],
+      review: ["Reviews de PR", "assets/blueberries.png", { r: 0, g: 0, b: 255 }],
+      issue: ["Issues", "assets/apple.jpg", { r: 255, g: 0, b: 0 }],
       //discussion: "Discussions",
     };
 
     const $ = id => document.getElementById(id);
     const render = stats =>
-      Object.entries(LABELS).map(([t, label]) =>
-        `${label} : série en cours ${stats[t].current} j, plus longue ${stats[t].longest} j`
-      ).join("\n");
+      Object.entries(LABELS).map(([t, [title, imgSrc]]) => `
+        <div class="stat-card" style="text-align: center; margin-bottom: 1rem;">
+          <img src="${imgSrc}" alt="${title}" style="width: 50px; height: auto; display: block; margin: 0 auto 0.5rem;" />
+          <div>
+            <strong>${title}</strong> : série en cours ${stats[t][0].current} j, plus longue ${stats[t][0].longest} j
+          </div>
+        </div>
+      `).join("");
 
     async function compute(pseudo, token) {
       const to = new Date();
@@ -86,7 +91,7 @@
     });
 
     $("login").addEventListener("click", login);
-    $("refresh").addEventListener("click", login); // une reconnexion redonne un token frais
+    $("refresh").addEventListener("click", login);
     $("logout").addEventListener("click", logout);
   </script>
 </body>
