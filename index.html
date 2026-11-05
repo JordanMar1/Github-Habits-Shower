@@ -21,7 +21,7 @@
       pr: "Pull requests",
       review: "Reviews de PR",
       issue: "Issues",
-      discussion: "Discussions",
+      //discussion: "Discussions",
     };
 
     const $ = id => document.getElementById(id);
@@ -62,8 +62,7 @@
       if (!connected) { $("status").textContent = ""; $("result").textContent = ""; lastToken = null; return; }
 
       const pseudo = session.user.user_metadata.user_name;
-      const token = session.provider_token; // présent seulement juste après la connexion
-
+      const token = session.provider_token;
       if (token && token !== lastToken) {
         lastToken = token;
         $("status").textContent = `Connecté : ${pseudo}. Chargement...`;
@@ -76,7 +75,6 @@
           $("status").textContent = "Erreur : " + e.message;
         }
       } else if (!token && !lastToken) {
-        // Retour sur le site plus tard : le token n'existe plus, on affiche les données sauvegardées
         const saved = await loadSaved(session.user.id);
         if (saved) {
           $("result").textContent = render(saved.stats);
