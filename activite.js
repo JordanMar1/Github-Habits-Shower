@@ -2,10 +2,9 @@ const TYPES = {
   pr: "pullRequestContributions",
   review: "pullRequestReviewContributions",
   issue: "issueContributions",
-  discussion: "repositoryDiscussionContributions",
+  //discussion: "repositoryDiscussion",
 };
 
-// Récupère toutes les dates d'un type d'activité (avec pagination)
 export async function fetchDates(login, token, type, from, to) {
   const field = TYPES[type];
   const query = `
