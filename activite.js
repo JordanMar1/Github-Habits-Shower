@@ -2,7 +2,8 @@ const TYPES = {
   pr: "pullRequestContributions",
   review: "pullRequestReviewContributions",
   issue: "issueContributions",
-  //discussion: "repositoryDiscussion",
+  commit: "commitContributions",
+  discussion: "repositoryDiscussionContributions",
 };
 
 export async function fetchDates(login, token, type, from, to) {
