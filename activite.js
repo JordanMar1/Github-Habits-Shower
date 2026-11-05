@@ -26,6 +26,9 @@ export async function fetchDates(login, token, type, from, to) {
           user(login: $login) {
             contributionsCollection(from: $from, to: $to) {
               commitContributionsByRepository(maxRepositories: 100) {
+                repository {
+                  name
+                }
                 contributions(first: 100) {
                   nodes {
                     occurredAt
