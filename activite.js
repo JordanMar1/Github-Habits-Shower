@@ -2,62 +2,129 @@ const TYPES = {
   pr: "pullRequestContributions",
   review: "pullRequestReviewContributions",
   issue: "issueContributions",
-  //discussion: "repositoryDiscussionContributions",
-  commit: "commitContributionsByRepository"
 };
 
+const GITHUB_GRAPHQL_URL = "https://api.github.com/graphql";
+
 export async function fetchDates(login, token, type, from, to) {
+  if (type === "discussion") {
+    console.warn(
+      "Les discussions ne sont pas disponibles dans ContributionsCollection de GitHub."
+    );
+    return [];
+  }
   const field = TYPES[type];
-  if (!field) {
+  if (type !== "commit" && !field) {
     console.warn(`Type d'activité inconnu : ${type}`);
     return [];
   }
-  const query = `
-    query($login: String!, $from: DateTime!, $to: DateTime!, $after: String) {
-      user(login: $login) {
-        contributionsCollection(from: $from, to: $to) {
-          ${type === "commit"
-            ? `${field}(maxRepositories: 100) {
-                nodes {
-                  repository {
-                    name
-                  }
-                  contributions(first: 100) {
-                    nodes {
-                      occurredAt
-                    }
-                  }
-                }
-              }`
-            : `${field}(first: 100, after: $after) {
-                nodes { occurredAt }
-                pageInfo { hasNextPage endCursor }
-              }`
-          }
-        }
-      }
-    }
-  `;
 
   const dates = [];
   let after = null;
+  const query =
+    type === "commit"
+      ? `
+        query($login: String!, $from: DateTime!, $to: DateTime!) {
+          user(login: $login) {
+            contributionsCollection(from: $from, to: $to) {
+              commitContributionsByRepository(maxRepositories: 100) {
+                contributions(first: 100) {
+                  nodes {
+                    occurredAt
+                  }
+                }
+              }
+            }
+          }
+        }
+      `
+      : `
+        query(
+          $login: String!,
+          $from: DateTime!,
+          $to: DateTime!,
+          $after: String
+        ) {
+          user(login: $login) {
+            contributionsCollection(from: $from, to: $to) {
+              ${field}(first: 100, after: $after) {
+                nodes {
+                  occurredAt
+                }
+                pageInfo {
+                  hasNextPage
+                  endCursor
+                }
+              }
+            }
+          }
+        }
+      `;
+
   while (true) {
-    const res = await fetch("https://api.github.com/graphql", {
+    const response = await fetch(GITHUB_GRAPHQL_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         query,
-        variables: { login, from: from.toISOString(), to: to.toISOString(), after },
+        variables: {
+          login,
+          from: from.toISOString(),
+          to: to.toISOString(),
+          after,
+        },
       }),
     });
-    const json = await res.json();
-    if (json.errors) throw new Error(json.errors[0].message);
-    if (!json.data.user) throw new Error("Utilisateur introuvable");
 
-    const page = json.data.user.contributionsCollection[field];
-    dates.push(...page.nodes.filter((el) => el !== null).map(n => n.occurredAt));
-    if (!page.pageInfo.hasNextPage) break;
+    const json = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        json.message || `Erreur HTTP GitHub : ${response.status}`
+      );
+    }
+    if (json.errors?.length) {
+      throw new Error(json.errors.map((error) => error.message).join(" | "));
+    }
+    const user = json.data?.user;
+    if (!user) {
+      throw new Error("Utilisateur GitHub introuvable.");
+    }
+    const collection = user.contributionsCollection;
+    if (!collection) {
+      throw new Error("GitHub n'a pas retourné ContributionsCollection.");
+    }
+    if (type === "commit") {
+      const repositories = collection.commitContributionsByRepository || [];
+      for (const repository of repositories) {
+        const nodes = repository.contributions?.nodes || [];
+        dates.push(
+          ...nodes
+            .filter((node) => node?.occurredAt)
+            .map((node) => node.occurredAt)
+        );
+      }
+      break;
+    }
+    const page = collection[field];
+    if (!page) {
+      throw new Error(`GitHub n'a pas retourné le champ ${field}.`);
+    }
+    dates.push(
+      ...(page.nodes || [])
+        .filter((node) => node?.occurredAt)
+        .map((node) => node.occurredAt)
+    );
+    if (!page.pageInfo?.hasNextPage) {
+      break;
+    }
+
     after = page.pageInfo.endCursor;
+    if (!after) {
+      throw new Error(`Pagination impossible pour ${type} : curseur absent.`);
+    }
   }
   return dates;
 }
@@ -65,13 +132,18 @@ export async function fetchDates(login, token, type, from, to) {
 export function toDays(dates, from, to) {
   const counts = {};
   for (const iso of dates) {
-    const d = iso.slice(0, 10);
-    counts[d] = (counts[d] || 0) + 1;
+    const date = iso.slice(0, 10);
+    counts[date] = (counts[date] || 0) + 1;
   }
   const days = [];
-  for (const t = new Date(from); t <= to; t.setUTCDate(t.getUTCDate() + 1)) {
-    const date = t.toISOString().slice(0, 10);
-    days.push({ date, count: counts[date] || 0 });
+
+  for (
+    const date = new Date(from);
+    date <= to;
+    date.setUTCDate(date.getUTCDate() + 1)
+  ) {
+    const day = date.toISOString().slice(0, 10);
+    days.push({ date: day, count: counts[day] || 0 });
   }
   return days;
 }
