@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Séries d'activité GitHub</title>
+</head>
+<body>
+  <button id="login">Se connecter avec GitHub</button>
+  <button id="logout" hidden>Se déconnecter</button>
+  <button id="refresh" hidden>Actualiser</button>
+  <p id="status"></p>
+  <pre id="result"></pre>
+
+  <script type="module">
+    import { supabase, login, logout } from "./connexion.js";
+    import { fetchDates, toDays } from "./activite.js";
+    import { computeStreaks } from "./compute_streak.js";
+
+    const LABELS = {
+      pr: "Pull requests",
+      review: "Reviews de PR",
+      issue: "Issues",
+      discussion: "Discussions",
+    };
+
+    const $ = id => document.getElementById(id);
+    const render = stats =>
+      Object.entries(LABELS).map(([t, label]) =>
+        `${label} : série en cours ${stats[t].current} j, plus longue ${stats[t].longest} j`
+      ).join("\n");
+
+    async function compute(pseudo, token) {
+      const to = new Date();
+      const from = new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate() - 364));
+      const types = Object.keys(LABELS);
+      const results = await Promise.all(types.map(t => fetchDates(pseudo, token, t, from, to)));
+      const stats = {};
+      types.forEach((t, i) => { stats[t] = computeStreaks(toDays(results[i], from, to)); });
+      return stats;
+    }
+
+    async function save(userId, stats) {
+      const { error } = await supabase.from("streaks")
+        .upsert({ user_id: userId, stats, updated_at: new Date().toISOString() });
+      if (error) console.warn("Sauvegarde impossible :", error.message);
+    }
+
+    async function loadSaved(userId) {
+      const { data } = await supabase.from("streaks")
+        .select("stats, updated_at").eq("user_id", userId).maybeSingle();
+      return data;
+    }
+
+    let lastToken = null;
+
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      const connected = !!session;
+      $("login").hidden = connected;
+      $("logout").hidden = !connected;
+      $("refresh").hidden = !connected;
+      if (!connected) { $("status").textContent = ""; $("result").textContent = ""; lastToken = null; return; }
+
+      const pseudo = session.user.user_metadata.user_name;
+      const token = session.provider_token; // présent seulement juste après la connexion
+
+      if (token && token !== lastToken) {
+        lastToken = token;
+        $("status").textContent = `Connecté : ${pseudo}. Chargement...`;
+        try {
+          const stats = await compute(pseudo, token);
+          $("result").textContent = render(stats);
+          $("status").textContent = `Connecté : ${pseudo}. Données à jour.`;
+          await save(session.user.id, stats);
+        } catch (e) {
+          $("status").textContent = "Erreur : " + e.message;
+        }
+      } else if (!token && !lastToken) {
+        // Retour sur le site plus tard : le token n'existe plus, on affiche les données sauvegardées
+        const saved = await loadSaved(session.user.id);
+        if (saved) {
+          $("result").textContent = render(saved.stats);
+          $("status").textContent = `Connecté : ${pseudo}. Dernière mise à jour : ${new Date(saved.updated_at).toLocaleString("fr-FR")}. Clique sur « Actualiser » pour recalculer.`;
+        } else {
+          $("status").textContent = `Connecté : ${pseudo}. Clique sur « Actualiser » pour charger tes données.`;
+        }
+      }
+    });
+
+    $("login").addEventListener("click", login);
+    $("refresh").addEventListener("click", login); // une reconnexion redonne un token frais
+    $("logout").addEventListener("click", logout);
+  </script>
+</body>
+</html>
